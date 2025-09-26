@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Exception;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -86,9 +87,14 @@ class ElevenLabsService
                     'Content-Type' => 'application/json',
                     'xi-api-key' => $this->apiKey
                 ],
+                // Do not throw exceptions on 4xx/5xx so we can log the response body
+                'http_errors' => false,
+                'timeout' => 30,
+                'connect_timeout' => 10,
                 'json' => [
                     'text' => $text,
                     'model_id' => 'eleven_multilingual_v2', // Use multilingual model for better language support
+                    'output_format' => 'mp3_44100_128',
                     'voice_settings' => [
                         'stability' => $stability,
                         'similarity_boost' => $similarityBoost,
@@ -107,7 +113,24 @@ class ElevenLabsService
             ]);
 
             if ($response->getStatusCode() !== 200) {
-                throw new Exception('Eleven Labs API returned status: ' . $response->getStatusCode());
+                $errorBody = (string) $response->getBody();
+                $contentType = implode(', ', $response->getHeader('Content-Type'));
+                Log::error('ElevenLabs API non-200 response', [
+                    'status' => $response->getStatusCode(),
+                    'content_type' => $contentType,
+                    'body' => $errorBody,
+                    'voice_id' => $voiceId,
+                    'text_length' => strlen($text)
+                ]);
+                return [
+                    'success' => false,
+                    'error' => 'ElevenLabs API returned status: ' . $response->getStatusCode(),
+                    'details' => [
+                        'status' => $response->getStatusCode(),
+                        'content_type' => $contentType,
+                        'body' => $errorBody
+                    ]
+                ];
             }
 
             $audioContent = $response->getBody()->getContents();
@@ -142,6 +165,25 @@ class ElevenLabsService
                 'text' => $text
             ];
 
+        } catch (RequestException $e) {
+            $errorBody = $e->hasResponse() ? (string) $e->getResponse()->getBody() : null;
+            $status = $e->hasResponse() ? $e->getResponse()->getStatusCode() : null;
+            Log::error('Eleven Labs TTS RequestException', [
+                'error' => $e->getMessage(),
+                'status' => $status,
+                'response_body' => $errorBody,
+                'voice_id' => $voiceId ?? 'unknown',
+                'text_length' => strlen($text ?? ''),
+                'api_key_configured' => !empty($this->apiKey)
+            ]);
+            return [
+                'success' => false,
+                'error' => 'Request to ElevenLabs failed: ' . $e->getMessage(),
+                'details' => [
+                    'status' => $status,
+                    'body' => $errorBody
+                ]
+            ];
         } catch (Exception $e) {
             Log::error('Eleven Labs TTS generation failed', [
                 'error' => $e->getMessage(),

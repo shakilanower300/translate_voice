@@ -187,12 +187,12 @@ class TextToSpeechController extends Controller
                     return response()->json([
                         'success' => false,
                         'error' => 'ElevenLabs speech generation failed: ' . ($result['error'] ?? 'Unknown error'),
-                        'details' => [
+                        'details' => array_merge([
                             'provider' => 'elevenlabs',
                             'voice_id' => $selectedVoiceId,
                             'language' => $language,
                             'api_configured' => $this->elevenLabsService->isConfigured()
-                        ]
+                        ], $result['details'] ?? [])
                     ], 500);
                 }
             } else {
