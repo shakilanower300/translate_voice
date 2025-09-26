@@ -1,7 +1,7 @@
 services:
   - type: web
     name: text-to-speech-app
-    runtime: php
+    runtime: python3
     plan: starter
     buildCommand: bash build.sh
     startCommand: bash start.sh

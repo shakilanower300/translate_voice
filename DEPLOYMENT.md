@@ -24,8 +24,9 @@ This Laravel application is configured for easy deployment on Render using the i
 
 3. **Configure the deployment**:
    - Render will automatically detect the `render.yaml` file
+   - **Choose "Python 3" as the runtime** when prompted
    - Alternatively, you can manually configure:
-     - **Environment**: PHP
+     - **Environment**: Python 3
      - **Build Command**: `bash build.sh`
      - **Start Command**: `bash start.sh`
      - **Plan**: Starter (free tier)
