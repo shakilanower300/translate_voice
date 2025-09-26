@@ -476,7 +476,12 @@
         const voicePitch = document.getElementById('voicePitch');
         const downloadBtn = document.getElementById('downloadBtn');
         const stopGenerationBtn = document.getElementById('stopGenerationBtn');
-        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        // Bootstrap modal: create a single resilient instance with static backdrop
+        const loadingModalEl = document.getElementById('loadingModal');
+        const loadingModal = bootstrap.Modal.getOrCreateInstance(loadingModalEl, {
+            backdrop: 'static',
+            keyboard: false
+        });
         
         // New voice-related elements
         const useElevenLabs = document.getElementById('useElevenLabs');
@@ -1267,14 +1272,27 @@
         }
 
         function hideLoading() {
-            loadingModal.hide();
-            
-            // Hide stop button when loading is hidden
-            const stopButtonContainer = document.getElementById('stopButtonContainer');
-            stopButtonContainer.style.display = 'none';
-            
-            // Re-enable all buttons
-            enableAllButtons();
+            try {
+                // Hide via Bootstrap instance
+                const instance = bootstrap.Modal.getInstance(loadingModalEl) || loadingModal;
+                instance.hide();
+            } catch (e) {
+                console.warn('hideLoading: modal instance issue', e);
+            } finally {
+                // Force cleanup in case Bootstrap leaves artifacts
+                loadingModalEl.classList.remove('show');
+                loadingModalEl.style.display = 'none';
+                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('padding-right');
+
+                // Hide stop button when loading is hidden
+                const stopButtonContainer = document.getElementById('stopButtonContainer');
+                if (stopButtonContainer) stopButtonContainer.style.display = 'none';
+
+                // Re-enable all buttons
+                enableAllButtons();
+            }
         }
 
         function disableAllButtons() {
