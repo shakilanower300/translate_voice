@@ -17,12 +17,26 @@ class ElevenLabsService
 
     public function __construct()
     {
-        $this->client = new Client();
-        $this->apiKey = env('ELEVEN_LABS_API_KEY');
+    $this->client = new Client();
+    // Prefer config over env to work with config:cache in production
+    $this->apiKey = trim((string) (config('services.elevenlabs.key') ?? env('ELEVEN_LABS_API_KEY')));
+    $this->baseUrl = (string) (config('services.elevenlabs.base_url') ?? $this->baseUrl);
         
         // Ensure audio directory exists
         if (!Storage::disk('public')->exists($this->storageDir)) {
             Storage::disk('public')->makeDirectory($this->storageDir);
+        }
+
+        // Log configuration status without leaking secrets
+        try {
+            Log::info('ElevenLabsService initialized', [
+                'base_url' => $this->baseUrl,
+                'model' => (string) (config('services.elevenlabs.model') ?? 'eleven_multilingual_v2'),
+                'api_key_present' => !empty($this->apiKey),
+                'api_key_prefix' => $this->apiKey ? substr($this->apiKey, 0, 6) : null
+            ]);
+        } catch (\Throwable $t) {
+            // ignore
         }
     }
 
@@ -81,7 +95,8 @@ class ElevenLabsService
                 $voiceId = 'EXAVITQu4vr4xnSDxMaL'; // Bella voice ID (default female voice)
             }
 
-            $response = $this->client->post($this->baseUrl . '/text-to-speech/' . $voiceId, [
+            $modelId = (string) (config('services.elevenlabs.model') ?? 'eleven_multilingual_v2');
+            $response = $this->client->post(rtrim($this->baseUrl, '/') . '/text-to-speech/' . $voiceId, [
                 'headers' => [
                     'Accept' => 'audio/mpeg',
                     'Content-Type' => 'application/json',
@@ -93,7 +108,7 @@ class ElevenLabsService
                 'connect_timeout' => 10,
                 'json' => [
                     'text' => $text,
-                    'model_id' => 'eleven_multilingual_v2', // Use multilingual model for better language support
+                    'model_id' => $modelId, // Use multilingual model for better language support
                     'output_format' => 'mp3_44100_128',
                     'voice_settings' => [
                         'stability' => $stability,
@@ -106,7 +121,7 @@ class ElevenLabsService
 
             Log::info('ElevenLabs API request sent', [
                 'voice_id' => $voiceId,
-                'model' => 'eleven_multilingual_v2',
+                'model' => $modelId,
                 'text_length' => strlen($text),
                 'stability' => $stability,
                 'similarity_boost' => $similarityBoost
@@ -120,7 +135,9 @@ class ElevenLabsService
                     'content_type' => $contentType,
                     'body' => $errorBody,
                     'voice_id' => $voiceId,
-                    'text_length' => strlen($text)
+                    'text_length' => strlen($text),
+                    'api_key_present' => !empty($this->apiKey),
+                    'api_key_prefix' => $this->apiKey ? substr($this->apiKey, 0, 6) : null
                 ]);
                 return [
                     'success' => false,

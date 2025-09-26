@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    // ElevenLabs TTS
+    'elevenlabs' => [
+        'key' => env('ELEVEN_LABS_API_KEY'),
+        'base_url' => env('ELEVEN_LABS_BASE_URL', 'https://api.elevenlabs.io/v1'),
+        'model' => env('ELEVEN_LABS_MODEL', 'eleven_multilingual_v2'),
+    ],
+
 ];
