@@ -36,9 +36,22 @@ class TextToSpeechController extends Controller
      */
     public function index(): View
     {
-        $supportedLanguages = $this->translationService->getSupportedLanguages();
-        $popularLanguages = $this->translationService->getPopularLanguages();
-        $voiceOptions = $this->ttsService->getVoiceOptions();
+        try {
+            $supportedLanguages = $this->translationService->getSupportedLanguages();
+            $popularLanguages = $this->translationService->getPopularLanguages();
+            $voiceOptions = $this->ttsService->getVoiceOptions();
+        } catch (\Throwable $e) {
+            // Fallback data if services fail
+            $supportedLanguages = [
+                'en' => 'English',
+                'es' => 'Spanish',
+                'fr' => 'French',
+                'de' => 'German',
+                'it' => 'Italian'
+            ];
+            $popularLanguages = $supportedLanguages;
+            $voiceOptions = [];
+        }
 
         // Get recent translations for history without failing the page if the DB is unavailable
         try {
