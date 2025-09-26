@@ -80,6 +80,13 @@ class ElevenLabsService
                 $voiceId = 'EXAVITQu4vr4xnSDxMaL'; // Bella voice ID (default female voice)
             }
 
+            Log::info('ElevenLabs: Starting speech generation', [
+                'text_length' => strlen($text),
+                'voice_id' => $voiceId,
+                'stability' => $stability,
+                'similarity_boost' => $similarityBoost
+            ]);
+
             $response = $this->client->post($this->baseUrl . '/text-to-speech/' . $voiceId, [
                 'headers' => [
                     'Accept' => 'audio/mpeg',
@@ -95,7 +102,8 @@ class ElevenLabsService
                         'style' => $style,
                         'use_speaker_boost' => $useSpeakerBoost
                     ]
-                ]
+                ],
+                'timeout' => 30 // Add timeout to prevent hanging
             ]);
 
             if ($response->getStatusCode() !== 200) {
@@ -135,11 +143,22 @@ class ElevenLabsService
             ];
 
         } catch (Exception $e) {
-            Log::error('Eleven Labs TTS generation failed: ' . $e->getMessage());
+            Log::error('Eleven Labs TTS generation failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'voice_id' => $voiceId ?? 'not_provided',
+                'text_length' => strlen($text ?? ''),
+                'api_key_configured' => !empty($this->apiKey)
+            ]);
             
             return [
                 'success' => false,
-                'error' => 'Speech generation failed: ' . $e->getMessage()
+                'error' => 'Speech generation failed: ' . $e->getMessage(),
+                'details' => [
+                    'voice_id' => $voiceId ?? 'not_provided',
+                    'api_configured' => !empty($this->apiKey)
+                ]
             ];
         }
     }
@@ -159,25 +178,67 @@ class ElevenLabsService
                     'N2lVS1w4EtoT3dr4eOWO' => 'Lily - British, Middle Aged'
                 ],
                 'es' => [
-                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual',
-                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual',
-                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Multilingual'
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Spanish Female',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Spanish Female',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Spanish Female',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Spanish Female',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Spanish Female'
                 ],
                 'fr' => [
-                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual',
-                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual'
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - French Female',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - French Female',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - French Female',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - French Female',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - French Female'
                 ],
                 'de' => [
-                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual',
-                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual'
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - German Female',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - German Female',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - German Female',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - German Female',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - German Female'
                 ],
                 'it' => [
-                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual',
-                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual'
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Italian Female',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Italian Female',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Italian Female',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Italian Female',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Italian Female'
                 ],
                 'pt' => [
-                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual',
-                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual'
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Portuguese Female',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Portuguese Female',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Portuguese Female',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Portuguese Female',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Portuguese Female'
+                ],
+                'hi' => [
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Hindi Female',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Hindi Female',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Hindi Female',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Hindi Female',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Hindi Female'
+                ],
+                'ja' => [
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Japanese Female',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Japanese Female',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Japanese Female',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Japanese Female',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Japanese Female'
+                ],
+                'ko' => [
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Korean Female',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Korean Female',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Korean Female',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Korean Female',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Korean Female'
+                ],
+                'zh' => [
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Chinese Female',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Chinese Female',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Chinese Female',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Chinese Female',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Chinese Female'
                 ]
             ],
             'male' => [
@@ -189,25 +250,67 @@ class ElevenLabsService
                     'CYw3kZ02Hs0563khs1Fj' => 'Dave - British, Conversational'
                 ],
                 'es' => [
-                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual',
-                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual',
-                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Multilingual'
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Spanish Male',
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Spanish Male',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Spanish Male',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Spanish Male',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Spanish Male'
                 ],
                 'fr' => [
-                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual',
-                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual'
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - French Male',
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - French Male',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - French Male',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - French Male',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - French Male'
                 ],
                 'de' => [
-                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual',
-                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual'
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - German Male',
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - German Male',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - German Male',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - German Male',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - German Male'
                 ],
                 'it' => [
-                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual',
-                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual'
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Italian Male',
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Italian Male',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Italian Male',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Italian Male',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Italian Male'
                 ],
                 'pt' => [
-                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual',
-                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual'
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Portuguese Male',
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Portuguese Male',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Portuguese Male',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Portuguese Male',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Portuguese Male'
+                ],
+                'hi' => [
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Hindi Male',
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Hindi Male',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Hindi Male',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Hindi Male',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Hindi Male'
+                ],
+                'ja' => [
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Japanese Male',
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Japanese Male',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Japanese Male',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Japanese Male',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Japanese Male'
+                ],
+                'ko' => [
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Korean Male',
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Korean Male',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Korean Male',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Korean Male',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Korean Male'
+                ],
+                'zh' => [
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Chinese Male',
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Chinese Male',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Chinese Male',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Chinese Male',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Chinese Male'
                 ]
             ]
         ];

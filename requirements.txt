@@ -1,2 +1,0 @@
-# This file is required for Python runtime on Render
-# Our app uses PHP, which is installed via build script
