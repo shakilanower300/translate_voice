@@ -1,5 +1,18 @@
 <?php
 
+// Handle health check before Laravel bootstrap to avoid dependency issues
+if ($_SERVER['REQUEST_URI'] === '/health' || $_SERVER['REQUEST_URI'] === '/health.php') {
+    http_response_code(200);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'ok',
+        'timestamp' => date('c'),
+        'php_version' => PHP_VERSION,
+        'server' => 'PHP Built-in'
+    ]);
+    exit;
+}
+
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 

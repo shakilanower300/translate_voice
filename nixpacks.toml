@@ -9,4 +9,4 @@ cmds = [
 ]
 
 [start]
-cmd = 'bash start.sh'
+cmd = 'bash bootstrap.sh'
