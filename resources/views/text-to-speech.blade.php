@@ -674,10 +674,7 @@
                 console.error('Translation error:', error);
                 showToast('Translation failed. Please try again.', 'danger');
             } finally {
-                // Add a small delay to ensure proper modal handling
-                setTimeout(() => {
-                    hideLoading();
-                }, 100);
+                hideLoading();
             }
         });
 
@@ -1250,86 +1247,31 @@
 
         // Helper functions
         function showLoading(text = 'Processing...', title = 'Processing Request', tip = 'This may take a few moments', showStopButton = false) {
-            console.log('showLoading called:', title);
+            // Update loading modal content
+            document.getElementById('loadingTitle').textContent = title;
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingTip').textContent = tip;
             
-            try {
-                // Check if modal exists
-                if (!loadingModal) {
-                    console.error('Loading modal not initialized');
-                    return;
-                }
-                
-                // Update loading modal content
-                const titleEl = document.getElementById('loadingTitle');
-                const textEl = document.getElementById('loadingText');
-                const tipEl = document.getElementById('loadingTip');
-                
-                if (titleEl) titleEl.textContent = title;
-                if (textEl) textEl.textContent = text;
-                if (tipEl) tipEl.textContent = tip;
-                
-                // Show or hide stop button based on parameter
-                const stopButtonContainer = document.getElementById('stopButtonContainer');
-                if (stopButtonContainer) {
-                    if (showStopButton) {
-                        stopButtonContainer.style.display = 'block';
-                    } else {
-                        stopButtonContainer.style.display = 'none';
-                    }
-                }
-                
-                // Disable all interactive buttons to prevent conflicts
-                disableAllButtons();
-                
-                // Show the modal
-                loadingModal.show();
-                console.log('Loading modal shown successfully');
-            } catch (error) {
-                console.error('Error showing loading modal:', error);
+            // Show or hide stop button based on parameter
+            const stopButtonContainer = document.getElementById('stopButtonContainer');
+            if (showStopButton) {
+                stopButtonContainer.style.display = 'block';
+            } else {
+                stopButtonContainer.style.display = 'none';
             }
+            
+            // Disable all interactive buttons to prevent conflicts
+            disableAllButtons();
+            
+            loadingModal.show();
         }
 
         function hideLoading() {
-            console.log('hideLoading called');
-            
-            try {
-                // Check if modal exists
-                if (!loadingModal) {
-                    console.error('Loading modal not initialized');
-                    return;
-                }
-                
-                // Force hide the modal
-                loadingModal.hide();
-                
-                // Alternative approach: directly manipulate modal classes as fallback
-                const modalElement = document.getElementById('loadingModal');
-                if (modalElement && modalElement.classList.contains('show')) {
-                    modalElement.classList.remove('show');
-                    modalElement.setAttribute('aria-hidden', 'true');
-                    modalElement.style.display = 'none';
-                    
-                    // Remove backdrop if exists
-                    const backdrop = document.querySelector('.modal-backdrop');
-                    if (backdrop) {
-                        backdrop.remove();
-                    }
-                    
-                    // Restore body scroll
-                    document.body.classList.remove('modal-open');
-                    document.body.style.paddingRight = '';
-                }
-                
-                console.log('Loading modal hidden successfully');
-            } catch (error) {
-                console.error('Error hiding loading modal:', error);
-            }
+            loadingModal.hide();
             
             // Hide stop button when loading is hidden
             const stopButtonContainer = document.getElementById('stopButtonContainer');
-            if (stopButtonContainer) {
-                stopButtonContainer.style.display = 'none';
-            }
+            stopButtonContainer.style.display = 'none';
             
             // Re-enable all buttons
             enableAllButtons();
