@@ -54,7 +54,6 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            // Ensure stderr is included by default so logs appear in Railway console
             'channels' => explode(',', (string) env('LOG_STACK', 'single,stderr')),
             'ignore_exceptions' => false,
         ],

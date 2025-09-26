@@ -745,17 +745,32 @@
                 });
 
                 if (!response.ok) {
-                    let errMsg = `HTTP error! status: ${response.status}`;
+                    // Try to get detailed error information from server
+                    let errorDetails = `HTTP error! status: ${response.status}`;
                     try {
-                        const err = await response.json();
-                        if (err && err.error) errMsg = err.error;
-                    } catch (_) {
+                        const errorData = await response.json();
+                        console.error('Server error details:', errorData);
+                        
+                        if (errorData.error) {
+                            errorDetails = errorData.error;
+                        }
+                        if (errorData.details) {
+                            console.error('Additional error details:', errorData.details);
+                        }
+                    } catch (parseError) {
+                        console.error('Could not parse error response:', parseError);
+                        // Try to get text response instead
                         try {
-                            const text = await response.text();
-                            if (text) errMsg = text;
-                        } catch (_) {}
+                            const errorText = await response.text();
+                            console.error('Error response text:', errorText);
+                            if (errorText) {
+                                errorDetails += ` - ${errorText}`;
+                            }
+                        } catch (textError) {
+                            console.error('Could not get error text:', textError);
+                        }
                     }
-                    throw new Error(errMsg);
+                    throw new Error(errorDetails);
                 }
 
                 const result = await response.json();
@@ -1277,22 +1292,36 @@
         }
 
         function hideLoading() {
-            try {
-                const modalEl = document.getElementById('loadingModal');
-                const instance = bootstrap.Modal.getInstance(modalEl) || loadingModal;
-                if (instance) instance.hide();
-            } catch (e) {
-                console.warn('Modal hide error (ignored):', e);
-            }
-
-            // Force-remove any lingering backdrops/body lock
-            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-            document.body.classList.remove('modal-open');
-            document.body.style.removeProperty('padding-right');
-
+            // Force hide the modal and clean up any stuck backdrop
+            loadingModal.hide();
+            
+            // Additional cleanup for stuck modals
+            setTimeout(() => {
+                // Force remove modal backdrop if it exists
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+                
+                // Ensure body doesn't have modal classes
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+                
+                // Force modal to be hidden
+                const modalElement = document.getElementById('loadingModal');
+                if (modalElement) {
+                    modalElement.classList.remove('show');
+                    modalElement.style.display = 'none';
+                    modalElement.setAttribute('aria-hidden', 'true');
+                }
+            }, 100);
+            
             // Hide stop button when loading is hidden
             const stopButtonContainer = document.getElementById('stopButtonContainer');
-            stopButtonContainer.style.display = 'none';
+            if (stopButtonContainer) {
+                stopButtonContainer.style.display = 'none';
+            }
             
             // Re-enable all buttons
             enableAllButtons();
