@@ -34,8 +34,8 @@ COPY --chown=www-data:www-data . /var/www/html
 # Install dependencies
 RUN composer install --optimize-autoloader --no-dev
 
-# Enable Apache mod_rewrite and headers
-RUN a2enmod rewrite headers deflate
+# Enable Apache mod_rewrite and headers (deflate is already loaded by default)
+RUN a2enmod rewrite headers
 
 # Copy custom Apache configuration
 COPY apache.conf /etc/apache2/sites-available/000-default.conf
