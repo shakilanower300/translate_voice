@@ -39,12 +39,19 @@ class TextToSpeechController extends Controller
         $supportedLanguages = $this->translationService->getSupportedLanguages();
         $popularLanguages = $this->translationService->getPopularLanguages();
         $voiceOptions = $this->ttsService->getVoiceOptions();
-        
-        // Get recent translations for history
-        $recentTranslations = Translation::with('audioFiles')
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get();
+
+        // Get recent translations for history without failing the page if the DB is unavailable
+        try {
+            $recentTranslations = Translation::with('audioFiles')
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get();
+        } catch (\Throwable $e) {
+            Log::error('Failed to load translation history for landing page', [
+                'message' => $e->getMessage(),
+            ]);
+            $recentTranslations = collect();
+        }
 
         return view('text-to-speech', compact(
             'supportedLanguages', 
