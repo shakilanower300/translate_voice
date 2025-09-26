@@ -745,7 +745,17 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    let errMsg = `HTTP error! status: ${response.status}`;
+                    try {
+                        const err = await response.json();
+                        if (err && err.error) errMsg = err.error;
+                    } catch (_) {
+                        try {
+                            const text = await response.text();
+                            if (text) errMsg = text;
+                        } catch (_) {}
+                    }
+                    throw new Error(errMsg);
                 }
 
                 const result = await response.json();
@@ -1267,8 +1277,19 @@
         }
 
         function hideLoading() {
-            loadingModal.hide();
-            
+            try {
+                const modalEl = document.getElementById('loadingModal');
+                const instance = bootstrap.Modal.getInstance(modalEl) || loadingModal;
+                if (instance) instance.hide();
+            } catch (e) {
+                console.warn('Modal hide error (ignored):', e);
+            }
+
+            // Force-remove any lingering backdrops/body lock
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+
             // Hide stop button when loading is hidden
             const stopButtonContainer = document.getElementById('stopButtonContainer');
             stopButtonContainer.style.display = 'none';

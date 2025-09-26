@@ -115,18 +115,39 @@ class ElevenLabsService
             if ($response->getStatusCode() !== 200) {
                 $errorBody = (string) $response->getBody();
                 $contentType = implode(', ', $response->getHeader('Content-Type'));
+                $status = $response->getStatusCode();
                 Log::error('ElevenLabs API non-200 response', [
-                    'status' => $response->getStatusCode(),
+                    'status' => $status,
                     'content_type' => $contentType,
                     'body' => $errorBody,
                     'voice_id' => $voiceId,
                     'text_length' => strlen($text)
                 ]);
+
+                // Retry once with default Bella voice if we did not already try it
+                $defaultVoice = 'EXAVITQu4vr4xnSDxMaL';
+                if ($voiceId !== $defaultVoice) {
+                    Log::warning('Retrying ElevenLabs TTS with default voice due to error', [
+                        'previous_voice' => $voiceId,
+                        'default_voice' => $defaultVoice,
+                        'status' => $status
+                    ]);
+
+                    return $this->generateSpeech(
+                        $text,
+                        $defaultVoice,
+                        $stability,
+                        $similarityBoost,
+                        $style,
+                        $useSpeakerBoost
+                    );
+                }
+
                 return [
                     'success' => false,
-                    'error' => 'ElevenLabs API returned status: ' . $response->getStatusCode(),
+                    'error' => 'ElevenLabs API returned status: ' . $status,
                     'details' => [
-                        'status' => $response->getStatusCode(),
+                        'status' => $status,
                         'content_type' => $contentType,
                         'body' => $errorBody
                     ]
