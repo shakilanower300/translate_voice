@@ -36,9 +36,19 @@ Railway will automatically set most variables, but you need to add:
 - `APP_DEBUG` - Set to `false`
 - `ELEVEN_LABS_API_KEY` - `sk_1a24c5398c4e11fae83a0d9a14cd9febecd44ebcf4dacd73`
 
-### Database (Auto-configured):
-Railway will automatically use SQLite, but you can add PostgreSQL if needed:
-- `DB_CONNECTION=sqlite` (default, no changes needed)
+### Database Setup:
+Your app is configured for MySQL. Railway will automatically:
+1. **Create MySQL database** - Railway provides managed MySQL
+2. **Set database variables** - `DATABASE_URL` will be auto-configured
+3. **Run migrations** - `php artisan migrate --force` during startup
+
+### Manual Database Variables (if needed):
+- `DB_CONNECTION=mysql` 
+- `DB_HOST` - Auto-provided by Railway MySQL service
+- `DB_PORT=3306`
+- `DB_DATABASE` - Auto-provided by Railway MySQL service  
+- `DB_USERNAME` - Auto-provided by Railway MySQL service
+- `DB_PASSWORD` - Auto-provided by Railway MySQL service
 
 ## 📁 Railway Configuration Files
 
