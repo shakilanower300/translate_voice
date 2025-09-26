@@ -9,7 +9,16 @@ Railway.com is perfect for Laravel applications with native PHP support!
 2. Sign up/Login with GitHub
 3. Click "**Deploy from GitHub repo**"
 4. Select your repository: `shakilanower300/translate_voice`
-5. Railway will automatically detect Laravel and deploy! ✨
+5. **Add MySQL Database:**
+   - In your Railway project dashboard
+   - Click "**+ New**" → "**Database**" → "**MySQL**"
+   - Railway will automatically connect it to your app
+6. **Set Environment Variables:**
+   - `ELEVEN_LABS_API_KEY` = `sk_1a24c5398c4e11fae83a0d9a14cd9febecd44ebcf4dacd73`
+   - `APP_KEY` = Generate new (Railway can auto-generate)
+   - `APP_ENV` = `production`
+   - `APP_DEBUG` = `false`
+7. Deploy! ✨
 
 ### Method 2: Railway CLI
 ```bash
