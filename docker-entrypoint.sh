@@ -33,5 +33,8 @@ chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 echo "Laravel setup complete!"
 
+# Ensure Apache runs in foreground and doesn't exit
+echo "Starting Apache in foreground mode..."
+
 # Start Apache
 exec "$@"

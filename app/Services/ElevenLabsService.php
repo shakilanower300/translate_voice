@@ -88,7 +88,7 @@ class ElevenLabsService
                 ],
                 'json' => [
                     'text' => $text,
-                    'model_id' => 'eleven_monolingual_v1',
+                    'model_id' => 'eleven_multilingual_v2', // Use multilingual model for better language support
                     'voice_settings' => [
                         'stability' => $stability,
                         'similarity_boost' => $similarityBoost,
@@ -96,6 +96,14 @@ class ElevenLabsService
                         'use_speaker_boost' => $useSpeakerBoost
                     ]
                 ]
+            ]);
+
+            Log::info('ElevenLabs API request sent', [
+                'voice_id' => $voiceId,
+                'model' => 'eleven_multilingual_v2',
+                'text_length' => strlen($text),
+                'stability' => $stability,
+                'similarity_boost' => $similarityBoost
             ]);
 
             if ($response->getStatusCode() !== 200) {
@@ -135,11 +143,22 @@ class ElevenLabsService
             ];
 
         } catch (Exception $e) {
-            Log::error('Eleven Labs TTS generation failed: ' . $e->getMessage());
+            Log::error('Eleven Labs TTS generation failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'voice_id' => $voiceId ?? 'unknown',
+                'text_length' => strlen($text ?? ''),
+                'api_key_configured' => !empty($this->apiKey)
+            ]);
             
             return [
                 'success' => false,
-                'error' => 'Speech generation failed: ' . $e->getMessage()
+                'error' => 'Speech generation failed: ' . $e->getMessage(),
+                'details' => [
+                    'voice_id' => $voiceId ?? 'unknown',
+                    'api_configured' => !empty($this->apiKey)
+                ]
             ];
         }
     }
@@ -161,23 +180,58 @@ class ElevenLabsService
                 'es' => [
                     'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual',
                     'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual',
-                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Multilingual'
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Multilingual',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Multilingual',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Multilingual'
                 ],
                 'fr' => [
                     'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual',
-                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual'
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Multilingual',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Multilingual',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Multilingual'
                 ],
                 'de' => [
                     'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual',
-                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual'
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Multilingual',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Multilingual',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Multilingual'
                 ],
                 'it' => [
                     'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual',
-                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual'
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Multilingual',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Multilingual',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Multilingual'
                 ],
                 'pt' => [
                     'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual',
-                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual'
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual',
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Multilingual',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Multilingual',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Multilingual'
+                ],
+                'hi' => [
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Multilingual Hindi',
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual Hindi',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual Hindi',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Multilingual Hindi',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Multilingual Hindi'
+                ],
+                'ja' => [
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Multilingual Japanese',
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual Japanese',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual Japanese',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Multilingual Japanese',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Multilingual Japanese'
+                ],
+                'zh' => [
+                    'EXAVITQu4vr4xnSDxMaL' => 'Bella - Multilingual Chinese',
+                    'XB0fDUnXU5powFXDhCwa' => 'Charlotte - Multilingual Chinese',
+                    'IKne3meq5aSn9XLyUdCD' => 'Freya - Multilingual Chinese',
+                    'jBpfuIE2acCO8z3wKNLl' => 'Gigi - Multilingual Chinese',
+                    'N2lVS1w4EtoT3dr4eOWO' => 'Lily - Multilingual Chinese'
                 ]
             ],
             'male' => [
@@ -191,23 +245,58 @@ class ElevenLabsService
                 'es' => [
                     '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual',
                     'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual',
-                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Multilingual'
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Multilingual',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Multilingual',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Multilingual'
                 ],
                 'fr' => [
                     '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual',
-                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual'
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Multilingual',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Multilingual',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Multilingual'
                 ],
                 'de' => [
                     '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual',
-                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual'
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Multilingual',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Multilingual',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Multilingual'
                 ],
                 'it' => [
                     '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual',
-                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual'
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Multilingual',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Multilingual',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Multilingual'
                 ],
                 'pt' => [
                     '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual',
-                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual'
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Multilingual',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Multilingual',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Multilingual'
+                ],
+                'hi' => [
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual Hindi',
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual Hindi',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Multilingual Hindi',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Multilingual Hindi',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Multilingual Hindi'
+                ],
+                'ja' => [
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual Japanese',
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual Japanese',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Multilingual Japanese',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Multilingual Japanese',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Multilingual Japanese'
+                ],
+                'zh' => [
+                    'pNInz6obpgDQGcFmaJgB' => 'Adam - Multilingual Chinese',
+                    '5Q0t7uMcjvnagumLfvZi' => 'Callum - Multilingual Chinese',
+                    'VR6AewLTigWG4xSOukaG' => 'Arnold - Multilingual Chinese',
+                    'yoZ06aMxZJJ28mfd3POQ' => 'Sam - Multilingual Chinese',
+                    'CYw3kZ02Hs0563khs1Fj' => 'Dave - Multilingual Chinese'
                 ]
             ]
         ];
@@ -220,14 +309,48 @@ class ElevenLabsService
     {
         $defaultVoices = $this->getDefaultVoices();
         
+        Log::info('ElevenLabs: Getting voice options', [
+            'language' => $language,
+            'gender' => $gender,
+            'available_genders' => array_keys($defaultVoices),
+            'available_languages' => isset($defaultVoices[$gender]) ? array_keys($defaultVoices[$gender]) : []
+        ]);
+        
         if (isset($defaultVoices[$gender][$language])) {
+            Log::info('ElevenLabs: Found voices for language', [
+                'count' => count($defaultVoices[$gender][$language])
+            ]);
             return $defaultVoices[$gender][$language];
         }
         
         // Fallback to English voices
         if (isset($defaultVoices[$gender]['en'])) {
+            Log::info('ElevenLabs: Using English fallback voices for unsupported language', [
+                'requested_language' => $language,
+                'count' => count($defaultVoices[$gender]['en'])
+            ]);
             return $defaultVoices[$gender]['en'];
         }
+        
+        // Ultimate fallback - get first available gender/language combination
+        if (!empty($defaultVoices)) {
+            $firstGender = array_keys($defaultVoices)[0];
+            if (!empty($defaultVoices[$firstGender])) {
+                $firstLanguage = array_keys($defaultVoices[$firstGender])[0];
+                Log::warning('ElevenLabs: Using ultimate fallback voices', [
+                    'requested_gender' => $gender,
+                    'requested_language' => $language,
+                    'fallback_gender' => $firstGender,
+                    'fallback_language' => $firstLanguage
+                ]);
+                return $defaultVoices[$firstGender][$firstLanguage];
+            }
+        }
+        
+        Log::error('ElevenLabs: No voices available', [
+            'gender' => $gender,
+            'language' => $language
+        ]);
         
         return [];
     }
@@ -237,14 +360,28 @@ class ElevenLabsService
      */
     public function getVoiceForLanguageAndGender(string $language, string $gender): string
     {
+        Log::info('ElevenLabs: Getting voice for language and gender', [
+            'language' => $language,
+            'gender' => $gender
+        ]);
+        
         $voiceOptions = $this->getVoiceOptions($language, $gender);
         
         if (!empty($voiceOptions)) {
             // Return the first voice ID (array key)
-            return array_keys($voiceOptions)[0];
+            $voiceId = array_keys($voiceOptions)[0];
+            Log::info('ElevenLabs: Selected voice', [
+                'voice_id' => $voiceId,
+                'voice_name' => $voiceOptions[$voiceId] ?? 'Unknown'
+            ]);
+            return $voiceId;
         }
         
         // Ultimate fallback to Bella (female voice)
+        Log::warning('ElevenLabs: Using ultimate fallback voice (Bella)', [
+            'requested_language' => $language,
+            'requested_gender' => $gender
+        ]);
         return 'EXAVITQu4vr4xnSDxMaL';
     }
 

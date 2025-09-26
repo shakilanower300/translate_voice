@@ -34,13 +34,11 @@ COPY --chown=www-data:www-data . /var/www/html
 # Install dependencies
 RUN composer install --optimize-autoloader --no-dev
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+# Enable Apache mod_rewrite and headers
+RUN a2enmod rewrite headers deflate
 
-# Change Apache document root to Laravel public directory
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+# Copy custom Apache configuration
+COPY apache.conf /etc/apache2/sites-available/000-default.conf
 
 # Set permissions
 RUN chmod -R 755 /var/www/html/storage
@@ -49,8 +47,14 @@ RUN chmod -R 755 /var/www/html/bootstrap/cache
 # Create storage symlink (will be created in entrypoint)
 # RUN php artisan storage:link
 
+# Set Apache ServerName to suppress warnings
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
 # Expose port 80
 EXPOSE 80
+
+# Set the PORT environment variable for Railway
+ENV PORT=80
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
