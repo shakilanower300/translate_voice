@@ -476,12 +476,7 @@
         const voicePitch = document.getElementById('voicePitch');
         const downloadBtn = document.getElementById('downloadBtn');
         const stopGenerationBtn = document.getElementById('stopGenerationBtn');
-        // Bootstrap modal: create a single resilient instance with static backdrop
-        const loadingModalEl = document.getElementById('loadingModal');
-        const loadingModal = bootstrap.Modal.getOrCreateInstance(loadingModalEl, {
-            backdrop: 'static',
-            keyboard: false
-        });
+        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
         
         // New voice-related elements
         const useElevenLabs = document.getElementById('useElevenLabs');
@@ -670,16 +665,17 @@
                     voiceCard.style.display = 'block';
                     currentTranslationId = result.translation_id;
                     
+                    hideLoading(); // Hide loading immediately on success
                     showToast('Translation completed successfully!', 'success');
                     loadHistory(); // Refresh history
                 } else {
+                    hideLoading(); // Hide loading on error
                     showToast(result.error || 'Translation failed', 'danger');
                 }
             } catch (error) {
                 console.error('Translation error:', error);
+                hideLoading(); // Ensure loading is hidden on exception
                 showToast('Translation failed. Please try again.', 'danger');
-            } finally {
-                hideLoading();
             }
         });
 
@@ -1252,6 +1248,8 @@
 
         // Helper functions
         function showLoading(text = 'Processing...', title = 'Processing Request', tip = 'This may take a few moments', showStopButton = false) {
+            console.log('showLoading called:', { text, title, tip, showStopButton });
+            
             // Update loading modal content
             document.getElementById('loadingTitle').textContent = title;
             document.getElementById('loadingText').textContent = text;
@@ -1269,29 +1267,70 @@
             disableAllButtons();
             
             loadingModal.show();
+            console.log('Loading modal shown');
         }
 
         function hideLoading() {
+            console.log('hideLoading called');
+            
             try {
-                // Hide via Bootstrap instance
-                const instance = bootstrap.Modal.getInstance(loadingModalEl) || loadingModal;
-                instance.hide();
-            } catch (e) {
-                console.warn('hideLoading: modal instance issue', e);
-            } finally {
-                // Force cleanup in case Bootstrap leaves artifacts
-                loadingModalEl.classList.remove('show');
-                loadingModalEl.style.display = 'none';
-                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-                document.body.classList.remove('modal-open');
-                document.body.style.removeProperty('padding-right');
-
+                loadingModal.hide();
+                console.log('Bootstrap modal hide() called');
+                
+                // Force close modal if it's still visible (Bootstrap 5 bug workaround)
+                setTimeout(() => {
+                    const modalElement = document.getElementById('loadingModal');
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    
+                    console.log('Modal cleanup - element exists:', !!modalElement, 'has show class:', modalElement?.classList.contains('show'));
+                    console.log('Modal cleanup - backdrop exists:', !!backdrop);
+                    
+                    if (modalElement && modalElement.classList.contains('show')) {
+                        modalElement.classList.remove('show');
+                        modalElement.style.display = 'none';
+                        modalElement.setAttribute('aria-hidden', 'true');
+                        modalElement.removeAttribute('aria-modal');
+                        console.log('Force removed modal show state');
+                    }
+                    
+                    if (backdrop) {
+                        backdrop.remove();
+                        console.log('Removed backdrop');
+                    }
+                    
+                    // Remove modal-open class from body
+                    document.body.classList.remove('modal-open');
+                    document.body.style.paddingRight = '';
+                    document.body.style.overflow = '';
+                    console.log('Cleaned up body classes and styles');
+                }, 100);
+                
                 // Hide stop button when loading is hidden
                 const stopButtonContainer = document.getElementById('stopButtonContainer');
-                if (stopButtonContainer) stopButtonContainer.style.display = 'none';
-
+                if (stopButtonContainer) {
+                    stopButtonContainer.style.display = 'none';
+                }
+                
                 // Re-enable all buttons
                 enableAllButtons();
+                console.log('Loading modal cleanup complete');
+            } catch (error) {
+                console.error('Error hiding loading modal:', error);
+                // Force cleanup even if there's an error
+                const modalElement = document.getElementById('loadingModal');
+                const backdrop = document.querySelector('.modal-backdrop');
+                
+                if (modalElement) {
+                    modalElement.classList.remove('show');
+                    modalElement.style.display = 'none';
+                }
+                if (backdrop) backdrop.remove();
+                document.body.classList.remove('modal-open');
+                document.body.style.paddingRight = '';
+                document.body.style.overflow = '';
+                
+                enableAllButtons();
+                console.log('Force cleanup completed after error');
             }
         }
 
