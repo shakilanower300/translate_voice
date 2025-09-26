@@ -24,11 +24,11 @@ APP_DEBUG="${APP_DEBUG:-false}"
 APP_URL="${APP_URL}"
 
 DB_CONNECTION="${DB_CONNECTION:-mysql}"
-DB_HOST="${DB_HOST}"
+DB_HOST="${DB_HOST:-localhost}"
 DB_PORT="${DB_PORT:-3306}"
-DB_DATABASE="${DB_DATABASE}"
-DB_USERNAME="${DB_USERNAME}"
-DB_PASSWORD="${DB_PASSWORD}"
+DB_DATABASE="${DB_DATABASE:-laravel}"
+DB_USERNAME="${DB_USERNAME:-root}"
+DB_PASSWORD="${DB_PASSWORD:-}"
 
 SESSION_DRIVER="${SESSION_DRIVER:-file}"
 CACHE_STORE="${CACHE_STORE:-file}"
@@ -50,8 +50,20 @@ fi
 # Create storage symlink
 php artisan storage:link || echo "Storage link failed, continuing..."
 
-# Run migrations if database is available
-php artisan migrate --force --no-interaction || echo "Migrations failed, continuing..."
+# Check if database connection is configured before running migrations
+if [ -n "$DB_HOST" ] && [ -n "$DB_DATABASE" ] && [ -n "$DB_USERNAME" ]; then
+    echo "Database configuration found, attempting to run migrations..."
+    # Test database connection first
+    php artisan migrate:status &> /dev/null
+    if [ $? -eq 0 ]; then
+        echo "Database connected successfully, running migrations..."
+        php artisan migrate --force --no-interaction || echo "Migrations failed, continuing..."
+    else
+        echo "Database not available yet, skipping migrations..."
+    fi
+else
+    echo "Database environment variables not set, skipping migrations..."
+fi
 
 # Cache configuration
 php artisan config:cache || echo "Config cache failed, continuing..."
