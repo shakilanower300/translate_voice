@@ -665,17 +665,19 @@
                     voiceCard.style.display = 'block';
                     currentTranslationId = result.translation_id;
                     
-                    hideLoading(); // Hide loading immediately on success
                     showToast('Translation completed successfully!', 'success');
                     loadHistory(); // Refresh history
                 } else {
-                    hideLoading(); // Hide loading on error
                     showToast(result.error || 'Translation failed', 'danger');
                 }
             } catch (error) {
                 console.error('Translation error:', error);
-                hideLoading(); // Ensure loading is hidden on exception
                 showToast('Translation failed. Please try again.', 'danger');
+            } finally {
+                // Add a small delay to ensure proper modal handling
+                setTimeout(() => {
+                    hideLoading();
+                }, 100);
             }
         });
 
@@ -1248,90 +1250,89 @@
 
         // Helper functions
         function showLoading(text = 'Processing...', title = 'Processing Request', tip = 'This may take a few moments', showStopButton = false) {
-            console.log('showLoading called:', { text, title, tip, showStopButton });
+            console.log('showLoading called:', title);
             
-            // Update loading modal content
-            document.getElementById('loadingTitle').textContent = title;
-            document.getElementById('loadingText').textContent = text;
-            document.getElementById('loadingTip').textContent = tip;
-            
-            // Show or hide stop button based on parameter
-            const stopButtonContainer = document.getElementById('stopButtonContainer');
-            if (showStopButton) {
-                stopButtonContainer.style.display = 'block';
-            } else {
-                stopButtonContainer.style.display = 'none';
+            try {
+                // Check if modal exists
+                if (!loadingModal) {
+                    console.error('Loading modal not initialized');
+                    return;
+                }
+                
+                // Update loading modal content
+                const titleEl = document.getElementById('loadingTitle');
+                const textEl = document.getElementById('loadingText');
+                const tipEl = document.getElementById('loadingTip');
+                
+                if (titleEl) titleEl.textContent = title;
+                if (textEl) textEl.textContent = text;
+                if (tipEl) tipEl.textContent = tip;
+                
+                // Show or hide stop button based on parameter
+                const stopButtonContainer = document.getElementById('stopButtonContainer');
+                if (stopButtonContainer) {
+                    if (showStopButton) {
+                        stopButtonContainer.style.display = 'block';
+                    } else {
+                        stopButtonContainer.style.display = 'none';
+                    }
+                }
+                
+                // Disable all interactive buttons to prevent conflicts
+                disableAllButtons();
+                
+                // Show the modal
+                loadingModal.show();
+                console.log('Loading modal shown successfully');
+            } catch (error) {
+                console.error('Error showing loading modal:', error);
             }
-            
-            // Disable all interactive buttons to prevent conflicts
-            disableAllButtons();
-            
-            loadingModal.show();
-            console.log('Loading modal shown');
         }
 
         function hideLoading() {
             console.log('hideLoading called');
             
             try {
-                loadingModal.hide();
-                console.log('Bootstrap modal hide() called');
+                // Check if modal exists
+                if (!loadingModal) {
+                    console.error('Loading modal not initialized');
+                    return;
+                }
                 
-                // Force close modal if it's still visible (Bootstrap 5 bug workaround)
-                setTimeout(() => {
-                    const modalElement = document.getElementById('loadingModal');
+                // Force hide the modal
+                loadingModal.hide();
+                
+                // Alternative approach: directly manipulate modal classes as fallback
+                const modalElement = document.getElementById('loadingModal');
+                if (modalElement && modalElement.classList.contains('show')) {
+                    modalElement.classList.remove('show');
+                    modalElement.setAttribute('aria-hidden', 'true');
+                    modalElement.style.display = 'none';
+                    
+                    // Remove backdrop if exists
                     const backdrop = document.querySelector('.modal-backdrop');
-                    
-                    console.log('Modal cleanup - element exists:', !!modalElement, 'has show class:', modalElement?.classList.contains('show'));
-                    console.log('Modal cleanup - backdrop exists:', !!backdrop);
-                    
-                    if (modalElement && modalElement.classList.contains('show')) {
-                        modalElement.classList.remove('show');
-                        modalElement.style.display = 'none';
-                        modalElement.setAttribute('aria-hidden', 'true');
-                        modalElement.removeAttribute('aria-modal');
-                        console.log('Force removed modal show state');
-                    }
-                    
                     if (backdrop) {
                         backdrop.remove();
-                        console.log('Removed backdrop');
                     }
                     
-                    // Remove modal-open class from body
+                    // Restore body scroll
                     document.body.classList.remove('modal-open');
                     document.body.style.paddingRight = '';
-                    document.body.style.overflow = '';
-                    console.log('Cleaned up body classes and styles');
-                }, 100);
-                
-                // Hide stop button when loading is hidden
-                const stopButtonContainer = document.getElementById('stopButtonContainer');
-                if (stopButtonContainer) {
-                    stopButtonContainer.style.display = 'none';
                 }
                 
-                // Re-enable all buttons
-                enableAllButtons();
-                console.log('Loading modal cleanup complete');
+                console.log('Loading modal hidden successfully');
             } catch (error) {
                 console.error('Error hiding loading modal:', error);
-                // Force cleanup even if there's an error
-                const modalElement = document.getElementById('loadingModal');
-                const backdrop = document.querySelector('.modal-backdrop');
-                
-                if (modalElement) {
-                    modalElement.classList.remove('show');
-                    modalElement.style.display = 'none';
-                }
-                if (backdrop) backdrop.remove();
-                document.body.classList.remove('modal-open');
-                document.body.style.paddingRight = '';
-                document.body.style.overflow = '';
-                
-                enableAllButtons();
-                console.log('Force cleanup completed after error');
             }
+            
+            // Hide stop button when loading is hidden
+            const stopButtonContainer = document.getElementById('stopButtonContainer');
+            if (stopButtonContainer) {
+                stopButtonContainer.style.display = 'none';
+            }
+            
+            // Re-enable all buttons
+            enableAllButtons();
         }
 
         function disableAllButtons() {
