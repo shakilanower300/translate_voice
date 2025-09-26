@@ -13,6 +13,17 @@ mkdir -p bootstrap/cache
 chmod -R 775 storage
 chmod -R 775 bootstrap/cache
 
+# Map Railway-provided MySQL env vars to Laravel if DB_* not set
+if [ -z "$DB_HOST" ] && [ -n "$MYSQLHOST" ]; then
+    echo "Detected Railway MySQL environment variables. Mapping to Laravel..."
+    export DB_CONNECTION=${DB_CONNECTION:-mysql}
+    export DB_HOST="$MYSQLHOST"
+    export DB_PORT="${MYSQLPORT:-3306}"
+    export DB_DATABASE="$MYSQLDATABASE"
+    export DB_USERNAME="$MYSQLUSER"
+    export DB_PASSWORD="$MYSQLPASSWORD"
+fi
+
 # Create .env file from environment variables if it doesn't exist
 if [ ! -f .env ]; then
     echo "Creating .env file from environment variables..."
@@ -53,13 +64,24 @@ php artisan storage:link || echo "Storage link failed, continuing..."
 # Check if database connection is configured before running migrations
 if [ -n "$DB_HOST" ] && [ -n "$DB_DATABASE" ] && [ -n "$DB_USERNAME" ]; then
     echo "Database configuration found, attempting to run migrations..."
-    # Test database connection first
-    php artisan migrate:status &> /dev/null
-    if [ $? -eq 0 ]; then
-        echo "Database connected successfully, running migrations..."
-        php artisan migrate --force --no-interaction || echo "Migrations failed, continuing..."
-    else
-        echo "Database not available yet, skipping migrations..."
+    # Wait for DB readiness with retries
+    MAX_RETRIES=20
+    RETRY_DELAY=2
+    TRY=1
+    while [ $TRY -le $MAX_RETRIES ]; do
+        php artisan migrate:status &> /dev/null && READY=1 || READY=0
+        if [ $READY -eq 1 ]; then
+            echo "Database connected successfully, running migrations..."
+            php artisan migrate --force --no-interaction || echo "Migrations failed, continuing..."
+            break
+        else
+            echo "[$TRY/$MAX_RETRIES] Database not ready yet, retrying in ${RETRY_DELAY}s..."
+            sleep $RETRY_DELAY
+        fi
+        TRY=$((TRY+1))
+    done
+    if [ ${READY:-0} -ne 1 ]; then
+        echo "Database not available after retries, skipping migrations..."
     fi
 else
     echo "Database environment variables not set. Running in stateless mode (history disabled)."
