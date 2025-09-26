@@ -3,6 +3,15 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TextToSpeechController;
 
+// Health check route for Railway
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now(),
+        'php_version' => PHP_VERSION
+    ]);
+});
+
 // Main application route
 Route::get('/', [TextToSpeechController::class, 'index'])->name('home');
 
