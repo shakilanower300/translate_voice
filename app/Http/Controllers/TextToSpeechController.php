@@ -115,16 +115,26 @@ class TextToSpeechController extends Controller
             $result = $this->translationService->translate($text, $targetLanguage, $sourceLanguage);
 
             if ($result['success']) {
-                // Save translation to database
-                $translation = Translation::create([
-                    'original_text' => $result['original_text'],
-                    'source_language' => $result['source_language'],
-                    'target_language' => $result['target_language'],
-                    'translated_text' => $result['translated_text'],
-                    'ip_address' => $request->ip()
-                ]);
+                try {
+                    // Attempt to persist translation history (non-critical)
+                    $translation = Translation::create([
+                        'original_text' => $result['original_text'],
+                        'source_language' => $result['source_language'],
+                        'target_language' => $result['target_language'],
+                        'translated_text' => $result['translated_text'],
+                        'ip_address' => $request->ip()
+                    ]);
 
-                $result['translation_id'] = $translation->id;
+                    $result['translation_id'] = $translation->id;
+                } catch (\Throwable $dbException) {
+                    Log::warning('Translation saved without database persistence', [
+                        'error' => $dbException->getMessage()
+                    ]);
+
+                    $result['translation_id'] = null;
+                    $result['storage_persisted'] = false;
+                    $result['message'] = $result['message'] ?? 'Translation succeeded but history is unavailable right now.';
+                }
             }
 
             return response()->json($result);
@@ -224,20 +234,30 @@ class TextToSpeechController extends Controller
             }
 
             if ($result['success'] && $translationId && $result['provider'] === 'elevenlabs' && isset($result['filepath'])) {
-                // Save audio file record to database (for Eleven Labs only)
-                $audioFile = AudioFile::create([
-                    'translation_id' => $translationId,
-                    'file_path' => $result['filepath'],
-                    'file_name' => $result['filename'],
-                    'voice_type' => $result['provider'] ?? 'elevenlabs',
-                    'voice_gender' => $gender,
-                    'voice_speed' => $speed,
-                    'voice_pitch' => $pitch,
-                    'file_size' => $result['file_size'],
-                    'mime_type' => $result['mime_type']
-                ]);
+                try {
+                    // Save audio file record to database (for Eleven Labs only)
+                    $audioFile = AudioFile::create([
+                        'translation_id' => $translationId,
+                        'file_path' => $result['filepath'],
+                        'file_name' => $result['filename'],
+                        'voice_type' => $result['provider'] ?? 'elevenlabs',
+                        'voice_gender' => $gender,
+                        'voice_speed' => $speed,
+                        'voice_pitch' => $pitch,
+                        'file_size' => $result['file_size'],
+                        'mime_type' => $result['mime_type']
+                    ]);
 
-                $result['audio_file_id'] = $audioFile->id;
+                    $result['audio_file_id'] = $audioFile->id;
+                } catch (\Throwable $dbException) {
+                    Log::warning('Audio metadata not persisted', [
+                        'error' => $dbException->getMessage(),
+                        'translation_id' => $translationId
+                    ]);
+
+                    $result['audio_file_id'] = null;
+                    $result['storage_persisted'] = false;
+                }
             }
             // Note: Web Speech API doesn't create downloadable files, so no database record
 
@@ -263,9 +283,9 @@ class TextToSpeechController extends Controller
      */
     public function getHistory(Request $request): JsonResponse
     {
+        $perPage = min($request->input('per_page', 20), 50);
+
         try {
-            $perPage = min($request->input('per_page', 20), 50);
-            
             $translations = Translation::with('audioFiles')
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage);
@@ -282,10 +302,22 @@ class TextToSpeechController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::warning('History unavailable', [
+                'error' => $e->getMessage()
+            ]);
+
             return response()->json([
-                'success' => false,
-                'error' => 'Failed to load history'
-            ], 500);
+                'success' => true,
+                'data' => [],
+                'meta' => [
+                    'current_page' => 1,
+                    'per_page' => $perPage ?? 20,
+                    'total' => 0,
+                    'last_page' => 1,
+                    'storage_persisted' => false
+                ],
+                'message' => 'History is temporarily unavailable while the database is offline.'
+            ]);
         }
     }
 

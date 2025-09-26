@@ -62,7 +62,7 @@ if [ -n "$DB_HOST" ] && [ -n "$DB_DATABASE" ] && [ -n "$DB_USERNAME" ]; then
         echo "Database not available yet, skipping migrations..."
     fi
 else
-    echo "Database environment variables not set, skipping migrations..."
+    echo "Database environment variables not set. Running in stateless mode (history disabled)."
 fi
 
 # Cache configuration
